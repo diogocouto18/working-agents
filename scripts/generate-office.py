@@ -92,17 +92,28 @@ for name,(x0,y0,x1,y1,color,grid) in ROOMS.items():
     floor_room(x0,y0,x1,y1,color,grid)
 
 rug(50,40,260,240,(122,86,52,255))
-rug(530,60,690,190,(56,74,110,255))
+# left edge extended to the room's own wall (480, was 530) — MEET's base
+# floor color is close enough to the hallway's dark tones that the exposed
+# margin there read as a stray dark patch floating next to the doorway.
+rug(480,60,690,190,(56,74,110,255))
 rug(660,290,940,420,(210,198,168,255))
 rug(20,390,240,600,(96,58,108,255))
-rug(440,180,540,260,(46,52,64,255))
+# the (440,180)-(540,260) hallway rug that used to sit under the lounge
+# sofa is gone along with the sofa itself — nothing sits on it anymore,
+# so it just read as an unexplained dark square in the middle of the floor.
 rug(660,500,930,624,(78,64,102,255))
 
-wall_v(WORK[1], WORK[3], WORK[2], gap=(3*TILE,5*TILE)); corridor_stub(WORK[2], 3*TILE, WORK[2]+TILE, 5*TILE)
+# WORK's right-hand door gap is left with plain hallway floor (no
+# corridor_stub fill) — the darker solid patch here used to combine with
+# MEET's dead second door-gap right below it into one ugly oversized block.
+wall_v(WORK[1], WORK[3], WORK[2], gap=(3*TILE,5*TILE))
 wall_h(WORK[0], WORK[2], WORK[3], gap=(5*TILE,7*TILE)); corridor_stub(5*TILE, WORK[3], 7*TILE, WORK[3]+TILE)
 wall_h(WORK[0], WORK[2], WORK[1]); wall_v(WORK[1], WORK[3], WORK[0])
 wall_h(MEET[0], MEET[2], MEET[3], gap=(18*TILE,20*TILE)); corridor_stub(18*TILE, MEET[3], 20*TILE, MEET[3]+TILE)
-wall_v(MEET[1], MEET[3], MEET[0], gap=(2*TILE,4*TILE)); corridor_stub(MEET[0]-TILE, 2*TILE, MEET[0], 4*TILE)
+# MEET's second (west) wall gap was never wired to a DOORS entry — nothing
+# ever paths through it — so it's sealed as a solid wall instead of a dead
+# doorway that only added visual clutter.
+wall_v(MEET[1], MEET[3], MEET[0])
 wall_h(MEET[0], MEET[2], MEET[1]); wall_v(MEET[1], MEET[3], MEET[2])
 wall_v(BATH[1], BATH[3], BATH[0], gap=(1*TILE,3*TILE)); corridor_stub(BATH[0]-TILE, 1*TILE, BATH[0], 3*TILE)
 wall_h(BATH[0], BATH[2], BATH[3], gap=(27*TILE,29*TILE)); corridor_stub(27*TILE, BATH[3], 29*TILE, BATH[3]+TILE)
@@ -223,10 +234,9 @@ place("Big-Plant", 28, 16)
 place("Books", 25, 18)
 
 # ===================== HALLWAY =====================
-# (13,6) used to straddle WORK's own right-hand wall (its x=448 wall line
-# cut straight through the sofa's footprint) — moved to the open channel
-# between WORK/MEET (top) and BAR (bottom), clear of every room rectangle.
-place("Small-Sofa", 16, 7)
+# The lounge sofa that used to sit here is gone — it originally straddled
+# WORK's own wall, then a relocation still looked awkward next to the
+# corridor floor patch above; removed rather than moved again, per request.
 place("Big-Plant", 12, 8)
 place("Big-Plant", 27, 6)
 place("Wall-Note", 14, 1, extra_scale=1.3)
