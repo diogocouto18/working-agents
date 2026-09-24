@@ -51,7 +51,7 @@ draw = ImageDraw.Draw(scene)
 # sofa/rug were cleared out of the hallway.
 for x in range(0, W, 16):
     for y in range(0, H, 16):
-        c = (46,50,64,255) if ((x//16 + y//16) % 2 == 0) else (36,40,52,255)
+        c = (74,80,100,255) if ((x//16 + y//16) % 2 == 0) else (60,66,84,255)
         draw.rectangle([x,y,x+15,y+15], fill=c)
 
 WALL = (15,16,22,255); WALLW = 4

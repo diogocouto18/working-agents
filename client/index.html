@@ -20,7 +20,7 @@
   html, body { margin: 0; height: 100%; background: var(--bg); font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; color: var(--text); overflow: hidden; }
   #app { height: 100%; display: flex; flex-direction: column; align-items: center; padding: 14px; box-sizing: border-box; gap: 10px; background: radial-gradient(ellipse at top, #0d1018 0%, var(--bg) 60%); }
 
-  #header { width: 100%; max-width: 1280px; display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: linear-gradient(180deg, var(--panel-bg-2), var(--panel-bg)); border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
+  #header { width: 100%; max-width: 1800px; display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: linear-gradient(180deg, var(--panel-bg-2), var(--panel-bg)); border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
   #header .brand { display: flex; align-items: baseline; gap: 8px; }
   #header .title { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; }
   #header .title::before { content: '▣'; color: var(--accent); margin-right: 6px; }
@@ -33,7 +33,7 @@
   #counts .n { color: var(--text-dim); }
   .working { color: var(--working); } .waiting { color: var(--waiting); } .idle { color: var(--idle); }
 
-  #main-row { flex-grow: 1; width: 100%; max-width: 1280px; display: flex; gap: 10px; min-height: 0; }
+  #main-row { flex-grow: 1; width: 100%; max-width: 1800px; display: flex; gap: 10px; min-height: 0; }
 
   #stage-viewport { flex-grow: 1; display: flex; align-items: center; justify-content: center; min-height: 0; min-width: 0; }
   #stage { position: relative; width: 960px; height: 640px; border-radius: 6px; overflow: hidden; background: #0a0c12; flex-shrink: 0; box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 0 1px var(--border); }
@@ -147,7 +147,7 @@ for (const { name, x, y } of ROOM_LABELS) {
 }
 
 function fitStage() {
-  const scale = Math.min(viewport.clientWidth / 960, viewport.clientHeight / 640, 1.6);
+  const scale = Math.min(viewport.clientWidth / 960, viewport.clientHeight / 640, 2.2);
   stage.style.transform = `scale(${scale})`;
 }
 window.addEventListener('resize', fitStage);
