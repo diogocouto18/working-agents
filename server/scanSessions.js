@@ -7,7 +7,9 @@ import { homedir } from 'node:os';
 import { parseSession } from './sessionParser.js';
 import { liveStatusFor } from './hookState.js';
 
-const PROJECTS_DIR = join(homedir(), '.claude', 'projects');
+// Overridable so a demo/screenshot run can point at a scratch directory of
+// synthetic sessions instead of touching the user's real Claude Code data.
+const PROJECTS_DIR = process.env.WORKING_AGENTS_PROJECTS_DIR ?? join(homedir(), '.claude', 'projects');
 const RELEVANT_MS = 30 * 60_000; // only show sessions touched in the last 30 min
 
 async function findJsonlFiles() {
