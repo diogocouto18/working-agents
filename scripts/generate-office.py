@@ -157,7 +157,7 @@ boss_chair_x = boss_x + (boss_dw - TILE) // 2
 boss_chair_y = boss_y + boss_dh
 place_px("Boss-Chair", boss_chair_x, boss_chair_y)
 DESK_SEATS.append((boss_chair_x, boss_chair_y))
-place("Big-Filing-Cabinet", 9, 5)
+place("Big-Filing-Cabinet", 9, 4)  # was row 5 — overlapped the Boss-Desk below it
 place("Folders", 11, 6)
 place("Filing-Cabinet-Open", 13, 2); place("Books", 13, 4); place("Books", 4, 8)
 
@@ -185,7 +185,7 @@ place("Bin", 20, 11)
 place("Big-Sofa-2", 22, 11)
 place("Small-Table", 26, 11)
 place("Chair-2", 27, 11)
-place("Books", 28, 9); place("Big-Sofa", 20, 9); place("Small-Plant", 29, 11)
+place("Books", 28, 9); place("Big-Sofa", 25, 9); place("Small-Plant", 29, 11)  # sofa was at col 20 — overlapped the Vending-Machine
 
 # ===================== GAMES ROOM =====================
 tbl_col, tbl_row = 1, 12

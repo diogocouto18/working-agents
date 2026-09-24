@@ -27,14 +27,20 @@ const WORK_SEATS = [
   { room: 'work', x: 208, y: 192 },
   { room: 'work', x: 304, y: 224 },
 ];
+// Each seat is deliberately anchored just in front of a real piece of
+// seating furniture placed by scripts/generate-office.py (Small-Sofa at
+// (15,4)=480,128 and Big-Sofa at (21,5)=672,160 in meeting; Chair-2 at
+// (6,13)=192,416 and Big-Sofa at (10,12)=320,384 in games) — an audit pass
+// found several of these floating tens of px from any furniture and they
+// were repositioned to sit right at each sofa/chair's front edge.
 const SOCIAL_SEATS = [
-  { room: 'meeting', x: 537, y: 96 },
-  { room: 'meeting', x: 592, y: 50 },
-  { room: 'meeting', x: 647, y: 96 },
+  { room: 'meeting', x: 497, y: 168 }, // Small-Sofa, left cushion
+  { room: 'meeting', x: 528, y: 168 }, // Small-Sofa, right cushion
+  { room: 'meeting', x: 688, y: 192 }, // Big-Sofa
   { room: 'bar', x: 740, y: 375 },
   { room: 'bar', x: 880, y: 375 },
-  { room: 'games', x: 208, y: 432 },
-  { room: 'games', x: 300, y: 470 },
+  { room: 'games', x: 208, y: 432 }, // Chair-2, by the pool table
+  { room: 'games', x: 336, y: 416 }, // Big-Sofa
   { room: 'dorm', x: 704, y: 544 },
   { room: 'dorm', x: 832, y: 544 },
   { room: 'dorm', x: 704, y: 608 },
@@ -72,11 +78,22 @@ function dist(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
+// games and bathroom sit on the far side of another room (work, meeting)
+// relative to HUB — a straight door<->HUB line for them visually cuts
+// through that room's walls. One bend waypoint per room routes around it
+// instead (verified clear of every room's rectangle).
+const DOOR_BEND = {
+  games: { x: 464, y: 336 }, // stays below WORK's floor (y>320) before turning up to HUB
+  bathroom: { x: 800, y: 240 }, // stays east of MEET (x>736) before turning to HUB
+};
+
 function buildPath(fromXY, toSeat) {
   // If already essentially at the seat, no path needed.
   if (dist(fromXY, toSeat) < 4) return [];
   const door = DOORS[toSeat.room];
-  return [door, HUB, door, toSeat].reduce((acc, wp) => {
+  const bend = DOOR_BEND[toSeat.room];
+  const waypoints = bend ? [door, bend, HUB, bend, door, toSeat] : [door, HUB, door, toSeat];
+  return waypoints.reduce((acc, wp) => {
     // collapse consecutive duplicate waypoints (e.g. same door twice when
     // walking within the same room) and skip the leading door/hub hop when
     // we're already inside that room, close to its door.
