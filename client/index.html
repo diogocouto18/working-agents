@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>working-agents</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #05070c; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; color: #eaf3fb; overflow: hidden; }
+  #app { height: 100%; display: flex; flex-direction: column; align-items: center; padding: 14px; box-sizing: border-box; gap: 10px; }
+  #header { width: 100%; max-width: 1280px; display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #111318; border-radius: 6px; box-sizing: border-box; flex-shrink: 0; }
+  #header .title { font-size: 15px; font-weight: 700; }
+  #header .sub { color: #8b93a3; font-size: 12px; margin-left: 8px; }
+  #counts { display: flex; gap: 14px; font-size: 12px; }
+  .working { color: #4fd67a; } .waiting { color: #e0a83c; } .idle { color: #6f7686; }
+
+  #main-row { flex-grow: 1; width: 100%; max-width: 1280px; display: flex; gap: 10px; min-height: 0; }
+
+  #stage-viewport { flex-grow: 1; display: flex; align-items: center; justify-content: center; min-height: 0; min-width: 0; }
+  #stage { position: relative; width: 960px; height: 640px; border-radius: 4px; overflow: hidden; background: #0a0c12; flex-shrink: 0; }
+  #stage img#bg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+  /* each agent is its own positioned element, moved via left/top with a
+     CSS transition matched to the server's movement tick rate — this is
+     what makes them walk instead of teleport */
+  .agent { position: absolute; width: 96px; height: 96px; transform: translate(-32px,-42px) scale(0.5); transform-origin: top left; cursor: pointer; transition: left 0.18s linear, top 0.18s linear; }
+  .agent img { width: 96px; height: 96px; image-rendering: pixelated; display: block; }
+  .agent.selected img { filter: drop-shadow(0 0 0 2px #1e90ff) drop-shadow(0 0 6px #1e90ff); }
+  .agent .label { position: absolute; left: 48px; top: 100px; transform: translateX(-50%) scale(2); white-space: nowrap; background: rgba(8,9,13,0.88); padding: 2px 6px; border-radius: 3px; font-size: 9px; text-align: center; }
+  .agent .label .name { color: #f0f2f8; font-weight: 700; }
+  .agent .label .status { display: block; }
+  .agent .bubble { position: absolute; left: 66px; top: -18px; width: 32px; height: 32px; border-radius: 50%; background: #e0a83c; border: 2px solid #1a1206; display: none; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #2b1a06; animation: bob 1s ease-in-out infinite; }
+  .agent.waiting .bubble { display: flex; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+  .corner { position: absolute; width: 22px; height: 22px; border-color: rgba(255,255,255,0.5); }
+  .tl { top: 0; left: 0; border-top: 2px solid; border-left: 2px solid; }
+  .tr { top: 0; right: 0; border-top: 2px solid; border-right: 2px solid; }
+  .bl { bottom: 0; left: 0; border-bottom: 2px solid; border-left: 2px solid; }
+  .br { bottom: 0; right: 0; border-bottom: 2px solid; border-right: 2px solid; }
+
+  #panel { width: 280px; flex-shrink: 0; background: #111318; border-radius: 6px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+  #panel .empty { color: #5c6474; font-size: 12px; margin: auto; text-align: center; }
+  #panel .head { display: flex; align-items: center; gap: 10px; }
+  #panel .avatar { width: 40px; height: 40px; border-radius: 6px; image-rendering: pixelated; background: #1b2333; }
+  #panel .name { font-size: 14px; font-weight: 700; }
+  #panel .status-line { font-size: 11px; }
+  #panel .divider { height: 1px; background: #23272f; }
+  #panel .rows { display: flex; flex-direction: column; gap: 7px; font-size: 12px; }
+  #panel .row { display: flex; justify-content: space-between; gap: 10px; }
+  #panel .row .k { color: #8b93a3; }
+  #panel .row .v { text-align: right; word-break: break-all; }
+  #panel .msg-label { font-size: 11px; color: #8b93a3; }
+  #panel .msg { font-size: 12px; background: #1b2333; border-radius: 4px; padding: 8px; color: #c7cdd8; max-height: 140px; overflow-y: auto; }
+  #panel .note { font-size: 10px; color: #4d5666; }
+
+  /* room name tags, fixed to the room bounds baked into office-bg.png —
+     the background has no text of its own, so without these the map is
+     just unlabeled colored rectangles */
+  #room-labels { position: absolute; inset: 0; pointer-events: none; }
+  .room-label { position: absolute; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.92); background: rgba(0,0,0,0.45); padding: 3px 8px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div><span class="title">working-agents</span><span class="sub">live Claude Code session monitor</span></div>
+    <div id="counts"></div>
+  </div>
+  <div id="main-row">
+    <div id="stage-viewport">
+      <div id="stage">
+        <img id="bg" src="assets/office-bg.png">
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <div id="room-labels"></div>
+        <div id="agents"></div>
+      </div>
+    </div>
+    <div id="panel"><div class="empty">Click an agent to see details</div></div>
+  </div>
+</div>
+<script>
+const stage = document.getElementById('stage');
+const viewport = document.getElementById('stage-viewport');
+const agentsEl = document.getElementById('agents');
+const countsEl = document.getElementById('counts');
+const panelEl = document.getElementById('panel');
+
+let latestSessions = [];
+let selectedId = null;
+const agentEls = new Map(); // sessionId -> DOM element
+
+// Room bounds baked into scripts/generate-office.py — keep these two in
+// sync if the layout ever moves (the script is the source of truth).
+const ROOM_LABELS = [
+  { name: 'Work', x: 8, y: 6 },
+  { name: 'Meeting', x: 488, y: 6 },
+  { name: 'Bathroom', x: 808, y: 6 },
+  { name: 'Bar', x: 648, y: 262 },
+  { name: 'Games', x: 8, y: 358 },
+  { name: 'Dorm', x: 648, y: 486 },
+];
+const roomLabelsEl = document.getElementById('room-labels');
+for (const { name, x, y } of ROOM_LABELS) {
+  const el = document.createElement('div');
+  el.className = 'room-label';
+  el.textContent = name;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  roomLabelsEl.appendChild(el);
+}
+
+function fitStage() {
+  const scale = Math.min(viewport.clientWidth / 960, viewport.clientHeight / 640, 1.6);
+  stage.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', fitStage);
+fitStage();
+
+function charIndexFor(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return h % 12;
+}
+function fmtDuration(ms) {
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60), rs = s % 60;
+  if (m < 60) return `${m}m ${rs}s`;
+  const h = Math.floor(m / 60), rm = m % 60;
+  return `${h}h ${rm}m`;
+}
+function fmtTokens(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
+  return String(n ?? 0);
+}
+function fmtCost(usd) {
+  if (usd == null) return '—';
+  return usd < 0.01 ? '<$0.01' : '$' + usd.toFixed(2);
+}
+function fmtAge(ms) {
+  const s = Math.round(ms / 1000);
+  return s < 60 ? `${s}s ago` : `${Math.round(s / 60)}m ago`;
+}
+
+function ensureAgentEl(id) {
+  let el = agentEls.get(id);
+  if (el) return el;
+  el = document.createElement('div');
+  el.className = 'agent';
+  el.innerHTML = `<div class="bubble">!</div><img><div class="label"><span class="name"></span><span class="status"></span></div>`;
+  el.addEventListener('click', () => selectAgent(id));
+  agentsEl.appendChild(el);
+  agentEls.set(id, el);
+  return el;
+}
+
+function selectAgent(id) {
+  selectedId = id;
+  for (const [aid, el] of agentEls) el.classList.toggle('selected', aid === id);
+  renderPanel();
+}
+
+function renderPanel() {
+  const s = latestSessions.find((s) => s.id === selectedId);
+  if (!s) { panelEl.innerHTML = `<div class="empty">Click an agent to see details</div>`; return; }
+  panelEl.innerHTML = `
+    <div class="head">
+      <img class="avatar" src="assets/characters/char-${charIndexFor(s.id)}.png">
+      <div>
+        <div class="name">${s.project}${s.isSubagent ? ' <span style="color:#8b93a3;font-weight:400;">(subagent)</span>' : ''}</div>
+        <div class="status-line ${s.status}">● ${s.status}</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="rows">
+      <div class="row"><span class="k">Model</span><span class="v">${s.model ?? '—'}</span></div>
+      <div class="row"><span class="k">Session duration</span><span class="v">${fmtDuration(s.sessionDurationMs)}</span></div>
+      <div class="row"><span class="k">Tokens used</span><span class="v">${fmtTokens(s.totalTokens)}</span></div>
+      <div class="row"><span class="k">Est. cost</span><span class="v">${fmtCost(s.estimatedCostUsd)}</span></div>
+      <div class="row"><span class="k">Tool calls</span><span class="v">${s.toolCallCount}</span></div>
+      <div class="row"><span class="k">Last activity</span><span class="v">${fmtAge(s.ageMs)}</span></div>
+      <div class="row"><span class="k">Source</span><span class="v">${s.statusSource ?? 'heuristic'}</span></div>
+    </div>
+    <div class="divider"></div>
+    <div class="msg-label">Last message</div>
+    <div class="msg">${(s.lastAssistantText ?? '—').replace(/</g, '&lt;')}</div>
+    <div class="note">Est. cost is approximate (token usage × published per-model rates), not a billed figure.</div>
+  `;
+}
+
+function renderSessions(sessions) {
+  latestSessions = sessions;
+  const counts = { working: 0, waiting: 0, idle: 0 };
+  for (const s of sessions) counts[s.status] = (counts[s.status] ?? 0) + 1;
+  countsEl.innerHTML = `
+    <span style="color:#8b93a3">${sessions.length} AGENTS</span>
+    <span class="working">● ${counts.working} WORKING</span>
+    <span class="waiting">● ${counts.waiting} WAITING</span>
+    <span class="idle">● ${counts.idle} IDLE</span>
+  `;
+
+  const liveIds = new Set(sessions.map((s) => s.id));
+  for (const [id, el] of agentEls) {
+    if (!liveIds.has(id)) { el.remove(); agentEls.delete(id); if (selectedId === id) selectedId = null; }
+  }
+
+  for (const s of sessions) {
+    const el = ensureAgentEl(s.id);
+    el.classList.toggle('waiting', s.status === 'waiting');
+    el.classList.toggle('selected', s.id === selectedId);
+    el.querySelector('img').src = `assets/characters/char-${charIndexFor(s.id)}.png`;
+    el.querySelector('.name').textContent = s.project;
+    const statusEl = el.querySelector('.status');
+    statusEl.textContent = '● ' + s.status;
+    statusEl.className = 'status ' + s.status;
+  }
+
+  if (selectedId) renderPanel();
+}
+
+function applyPositions(positions) {
+  for (const [id, pos] of Object.entries(positions)) {
+    const el = agentEls.get(id);
+    if (!el) continue;
+    el.style.left = pos.x + 'px';
+    el.style.top = pos.y + 'px';
+  }
+}
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}`);
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'sessions') { renderSessions(msg.sessions); applyPositions(msg.positions); }
+    else if (msg.type === 'positions') { applyPositions(msg.positions); }
+  };
+  ws.onclose = () => setTimeout(connect, 1500);
+  ws.onerror = () => ws.close();
+}
+connect();
+</script>
+</body>
+</html>
