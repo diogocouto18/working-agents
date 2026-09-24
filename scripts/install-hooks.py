@@ -2,11 +2,13 @@
 """Adds working-agents' Claude Code hooks to ~/.claude/settings.json.
 Backs up the original first. Safe to re-run (won't duplicate the block)."""
 import json, os, shutil, sys
+from pathlib import Path
 
 SETTINGS = os.path.expanduser("~/.claude/settings.json")
-HOOK_SCRIPT = os.path.expanduser(
-    "~/workspace/mini-projects/working-agents/server/claude-hook.js"
-)
+# Resolved relative to this script, not a hardcoded clone path — a repo
+# checked out anywhere other than ~/workspace/mini-projects/working-agents
+# used to get hook commands pointing at a file that doesn't exist.
+HOOK_SCRIPT = str((Path(__file__).resolve().parent.parent / "server" / "claude-hook.js"))
 
 EVENTS = {
     "SessionStart": None, "SessionEnd": None,
