@@ -223,7 +223,10 @@ place("Big-Plant", 28, 16)
 place("Books", 25, 18)
 
 # ===================== HALLWAY =====================
-place("Small-Sofa", 13, 6)
+# (13,6) used to straddle WORK's own right-hand wall (its x=448 wall line
+# cut straight through the sofa's footprint) — moved to the open channel
+# between WORK/MEET (top) and BAR (bottom), clear of every room rectangle.
+place("Small-Sofa", 16, 7)
 place("Big-Plant", 12, 8)
 place("Big-Plant", 27, 6)
 place("Wall-Note", 14, 1, extra_scale=1.3)
