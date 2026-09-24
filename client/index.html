@@ -4,71 +4,108 @@
 <meta charset="utf-8">
 <title>working-agents</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #05070c; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; color: #eaf3fb; overflow: hidden; }
-  #app { height: 100%; display: flex; flex-direction: column; align-items: center; padding: 14px; box-sizing: border-box; gap: 10px; }
-  #header { width: 100%; max-width: 1280px; display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #111318; border-radius: 6px; box-sizing: border-box; flex-shrink: 0; }
-  #header .title { font-size: 15px; font-weight: 700; }
-  #header .sub { color: #8b93a3; font-size: 12px; margin-left: 8px; }
+  :root {
+    --bg: #05070c;
+    --panel-bg: #12141b;
+    --panel-bg-2: #171a23;
+    --border: #262b38;
+    --text: #eef2f8;
+    --text-dim: #8b93a3;
+    --text-faint: #4d5666;
+    --accent: #e0a83c;
+    --working: #4fd67a;
+    --waiting: #e0a83c;
+    --idle: #6f7686;
+  }
+  html, body { margin: 0; height: 100%; background: var(--bg); font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; color: var(--text); overflow: hidden; }
+  #app { height: 100%; display: flex; flex-direction: column; align-items: center; padding: 14px; box-sizing: border-box; gap: 10px; background: radial-gradient(ellipse at top, #0d1018 0%, var(--bg) 60%); }
+
+  #header { width: 100%; max-width: 1280px; display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: linear-gradient(180deg, var(--panel-bg-2), var(--panel-bg)); border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
+  #header .brand { display: flex; align-items: baseline; gap: 8px; }
+  #header .title { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; }
+  #header .title::before { content: '▣'; color: var(--accent); margin-right: 6px; }
+  #header .sub { color: var(--text-dim); font-size: 12px; }
+  #header .right { display: flex; align-items: center; gap: 18px; }
+  #clock { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); border-right: 1px solid var(--border); padding-right: 18px; }
+  #clock .phase-icon { font-size: 13px; }
+  #clock .time { color: var(--text); font-weight: 700; letter-spacing: 0.03em; }
   #counts { display: flex; gap: 14px; font-size: 12px; }
-  .working { color: #4fd67a; } .waiting { color: #e0a83c; } .idle { color: #6f7686; }
+  #counts .n { color: var(--text-dim); }
+  .working { color: var(--working); } .waiting { color: var(--waiting); } .idle { color: var(--idle); }
 
   #main-row { flex-grow: 1; width: 100%; max-width: 1280px; display: flex; gap: 10px; min-height: 0; }
 
   #stage-viewport { flex-grow: 1; display: flex; align-items: center; justify-content: center; min-height: 0; min-width: 0; }
-  #stage { position: relative; width: 960px; height: 640px; border-radius: 4px; overflow: hidden; background: #0a0c12; flex-shrink: 0; }
+  #stage { position: relative; width: 960px; height: 640px; border-radius: 6px; overflow: hidden; background: #0a0c12; flex-shrink: 0; box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 0 1px var(--border); }
   #stage img#bg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+  /* day/night: two stacked overlays recomputed from the real clock — a cool
+     wash that deepens overnight (matching the dorm's 00:00-08:00 window)
+     and a brief warm glow at dusk/dawn. Both pointer-events:none so they
+     never block clicks on agents underneath. */
+  #night-overlay, #glow-overlay { position: absolute; inset: 0; pointer-events: none; transition: opacity 4s ease; }
+  #night-overlay { background: #0a0e2a; mix-blend-mode: multiply; opacity: 0; }
+  #glow-overlay { background: linear-gradient(180deg, rgba(255,150,80,0.35) 0%, rgba(255,150,80,0) 55%); mix-blend-mode: soft-light; opacity: 0; }
 
   /* each agent is its own positioned element, moved via left/top with a
      CSS transition matched to the server's movement tick rate — this is
-     what makes them walk instead of teleport */
-  .agent { position: absolute; width: 96px; height: 96px; transform: translate(-32px,-42px) scale(0.5); transform-origin: top left; cursor: pointer; transition: left 0.18s linear, top 0.18s linear; }
-  .agent img { width: 96px; height: 96px; image-rendering: pixelated; display: block; }
-  .agent.selected img { filter: drop-shadow(0 0 0 2px #1e90ff) drop-shadow(0 0 6px #1e90ff); }
-  .agent .label { position: absolute; left: 48px; top: 100px; transform: translateX(-50%) scale(2); white-space: nowrap; background: rgba(8,9,13,0.88); padding: 2px 6px; border-radius: 3px; font-size: 9px; text-align: center; }
+     what makes them walk instead of teleport. The sprite is a background
+     crop of a 4-direction x 6-frame walk-cycle sheet, stepped by JS. */
+  .agent { position: absolute; width: 96px; height: 96px; transform: translate(-32px,-42px) scale(0.5); transform-origin: top left; cursor: pointer; transition: left 0.18s linear, top 0.18s linear; z-index: 2; }
+  .agent .sprite { width: 96px; height: 96px; background-repeat: no-repeat; image-rendering: pixelated; }
+  .agent.selected .sprite { filter: drop-shadow(0 0 0 2px #1e90ff) drop-shadow(0 0 6px #1e90ff); }
+  .agent .label { position: absolute; left: 48px; top: 100px; transform: translateX(-50%) scale(2); white-space: nowrap; background: rgba(8,9,13,0.88); padding: 2px 6px; border-radius: 3px; font-size: 9px; text-align: center; border: 1px solid rgba(255,255,255,0.06); }
   .agent .label .name { color: #f0f2f8; font-weight: 700; }
   .agent .label .status { display: block; }
-  .agent .bubble { position: absolute; left: 66px; top: -18px; width: 32px; height: 32px; border-radius: 50%; background: #e0a83c; border: 2px solid #1a1206; display: none; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #2b1a06; animation: bob 1s ease-in-out infinite; }
+  .agent .bubble { position: absolute; left: 66px; top: -18px; width: 32px; height: 32px; border-radius: 50%; background: var(--waiting); border: 2px solid #1a1206; display: none; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #2b1a06; animation: bob 1s ease-in-out infinite; z-index: 3; }
   .agent.waiting .bubble { display: flex; }
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
-  .corner { position: absolute; width: 22px; height: 22px; border-color: rgba(255,255,255,0.5); }
+  .corner { position: absolute; width: 22px; height: 22px; border-color: rgba(255,255,255,0.4); z-index: 3; }
   .tl { top: 0; left: 0; border-top: 2px solid; border-left: 2px solid; }
   .tr { top: 0; right: 0; border-top: 2px solid; border-right: 2px solid; }
   .bl { bottom: 0; left: 0; border-bottom: 2px solid; border-left: 2px solid; }
   .br { bottom: 0; right: 0; border-bottom: 2px solid; border-right: 2px solid; }
 
-  #panel { width: 280px; flex-shrink: 0; background: #111318; border-radius: 6px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
-  #panel .empty { color: #5c6474; font-size: 12px; margin: auto; text-align: center; }
-  #panel .head { display: flex; align-items: center; gap: 10px; }
-  #panel .avatar { width: 40px; height: 40px; border-radius: 6px; image-rendering: pixelated; background: #1b2333; }
+  #panel { width: 288px; flex-shrink: 0; background: linear-gradient(180deg, var(--panel-bg-2), var(--panel-bg)); border: 1px solid var(--border); border-radius: 8px; padding: 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
+  #panel .empty { color: var(--text-faint); font-size: 12px; margin: auto; text-align: center; }
+  #panel .head { display: flex; align-items: center; gap: 12px; }
+  #panel .avatar { width: 44px; height: 44px; border-radius: 8px; image-rendering: pixelated; background: #1b2333; border: 1px solid var(--border); flex-shrink: 0; }
   #panel .name { font-size: 14px; font-weight: 700; }
-  #panel .status-line { font-size: 11px; }
-  #panel .divider { height: 1px; background: #23272f; }
-  #panel .rows { display: flex; flex-direction: column; gap: 7px; font-size: 12px; }
+  #panel .status-line { font-size: 11px; margin-top: 2px; }
+  #panel .divider { height: 1px; background: var(--border); }
+  #panel .section-label { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+  #panel .rows { display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
   #panel .row { display: flex; justify-content: space-between; gap: 10px; }
-  #panel .row .k { color: #8b93a3; }
-  #panel .row .v { text-align: right; word-break: break-all; }
-  #panel .msg-label { font-size: 11px; color: #8b93a3; }
-  #panel .msg { font-size: 12px; background: #1b2333; border-radius: 4px; padding: 8px; color: #c7cdd8; max-height: 140px; overflow-y: auto; }
-  #panel .note { font-size: 10px; color: #4d5666; }
+  #panel .row .k { color: var(--text-dim); }
+  #panel .row .v { text-align: right; word-break: break-all; font-weight: 600; }
+  #panel .msg { font-size: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: #c7cdd8; max-height: 140px; overflow-y: auto; }
+  #panel .note { font-size: 10px; color: var(--text-faint); line-height: 1.4; }
 
   /* room name tags, fixed to the room bounds baked into office-bg.png —
      the background has no text of its own, so without these the map is
      just unlabeled colored rectangles */
-  #room-labels { position: absolute; inset: 0; pointer-events: none; }
+  #room-labels { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
   .room-label { position: absolute; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.92); background: rgba(0,0,0,0.45); padding: 3px 8px; border-radius: 3px; }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="header">
-    <div><span class="title">working-agents</span><span class="sub">live Claude Code session monitor</span></div>
-    <div id="counts"></div>
+    <div class="brand">
+      <span class="title">working-agents</span><span class="sub">live Claude Code session monitor</span>
+    </div>
+    <div class="right">
+      <div id="clock"><span class="phase-icon"></span><span class="time"></span></div>
+      <div id="counts"></div>
+    </div>
   </div>
   <div id="main-row">
     <div id="stage-viewport">
       <div id="stage">
         <img id="bg" src="assets/office-bg.png">
+        <div id="night-overlay"></div>
+        <div id="glow-overlay"></div>
         <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
         <div id="room-labels"></div>
         <div id="agents"></div>
@@ -87,6 +124,7 @@ const panelEl = document.getElementById('panel');
 let latestSessions = [];
 let selectedId = null;
 const agentEls = new Map(); // sessionId -> DOM element
+const agentMotion = new Map(); // sessionId -> { x, y, dir, frame, walking }
 
 // Room bounds baked into scripts/generate-office.py — keep these two in
 // sync if the layout ever moves (the script is the source of truth).
@@ -115,11 +153,61 @@ function fitStage() {
 window.addEventListener('resize', fitStage);
 fitStage();
 
+// ---- day/night cycle, driven by the viewer's real clock (same clock the
+// server's daily schedule uses) — night deepens through the dorm's
+// 00:00-08:00 sleep window, with a brief warm glow at dusk and dawn. ----
+const nightOverlayEl = document.getElementById('night-overlay');
+const glowOverlayEl = document.getElementById('glow-overlay');
+const clockTimeEl = document.querySelector('#clock .time');
+const clockIconEl = document.querySelector('#clock .phase-icon');
+
+function nightFactor(h) {
+  if (h >= 8 && h < 19) return 0;
+  if (h >= 19 && h < 22) return (h - 19) / 3;
+  if (h >= 22 || h < 6) return 1;
+  return 1 - (h - 6) / 2; // 06:00-08:00 dawn ramp
+}
+function duskDawnGlow(h) {
+  const dusk = Math.max(0, 1 - Math.abs(h - 19.5) / 1.5);
+  const dawn = Math.max(0, 1 - Math.abs(h - 6.5) / 1.5);
+  return Math.max(dusk, dawn);
+}
+function phaseIcon(h) {
+  if (h >= 8 && h < 19) return '☀️';
+  if (h >= 6 && h < 8 || h >= 19 && h < 22) return '🌇';
+  return '🌙';
+}
+function updateDayNight() {
+  const now = new Date();
+  const h = now.getHours() + now.getMinutes() / 60;
+  nightOverlayEl.style.opacity = (nightFactor(h) * 0.6).toFixed(2);
+  glowOverlayEl.style.opacity = (duskDawnGlow(h) * 0.5).toFixed(2);
+  clockIconEl.textContent = phaseIcon(h);
+  clockTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+updateDayNight();
+setInterval(updateDayNight, 30_000);
+
+// ---- character sprites: each char-N.png is a 6-col x 4-row walk-cycle
+// sheet (96px cells) — rows are down/left/up/right, col 0 of each row is
+// the standing pose. Direction comes from the sign of the last movement
+// delta; frames advance only while the server says the agent is walking. ----
+const DIR_ROW = { down: 0, left: 1, up: 2, right: 3 };
+const CELL = 96;
+const SHEET_W = CELL * 6;
+const SHEET_H = CELL * 4;
+
 function charIndexFor(id) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return h % 12;
 }
+function spriteUrl(id) { return `assets/characters/char-${charIndexFor(id)}.png`; }
+function setSpriteFrame(spriteEl, dir, frame) {
+  spriteEl.style.backgroundSize = `${SHEET_W}px ${SHEET_H}px`;
+  spriteEl.style.backgroundPosition = `${-frame * CELL}px ${-DIR_ROW[dir] * CELL}px`;
+}
+
 function fmtDuration(ms) {
   const s = Math.round(ms / 1000);
   if (s < 60) return `${s}s`;
@@ -147,10 +235,13 @@ function ensureAgentEl(id) {
   if (el) return el;
   el = document.createElement('div');
   el.className = 'agent';
-  el.innerHTML = `<div class="bubble">!</div><img><div class="label"><span class="name"></span><span class="status"></span></div>`;
+  el.innerHTML = `<div class="bubble">!</div><div class="sprite"></div><div class="label"><span class="name"></span><span class="status"></span></div>`;
+  el.querySelector('.sprite').style.backgroundImage = `url(${spriteUrl(id)})`;
   el.addEventListener('click', () => selectAgent(id));
   agentsEl.appendChild(el);
   agentEls.set(id, el);
+  agentMotion.set(id, { x: null, y: null, dir: 'down', frame: 0, walking: false });
+  setSpriteFrame(el.querySelector('.sprite'), 'down', 0);
   return el;
 }
 
@@ -163,15 +254,17 @@ function selectAgent(id) {
 function renderPanel() {
   const s = latestSessions.find((s) => s.id === selectedId);
   if (!s) { panelEl.innerHTML = `<div class="empty">Click an agent to see details</div>`; return; }
+  const avatarPos = '0px 0px'; // down-facing, frame 0 — a clean idle portrait
   panelEl.innerHTML = `
     <div class="head">
-      <img class="avatar" src="assets/characters/char-${charIndexFor(s.id)}.png">
+      <div class="avatar" style="background-image:url(${spriteUrl(s.id)}); background-size:${SHEET_W*44/CELL}px ${SHEET_H*44/CELL}px; background-position:${avatarPos};"></div>
       <div>
-        <div class="name">${s.project}${s.isSubagent ? ' <span style="color:#8b93a3;font-weight:400;">(subagent)</span>' : ''}</div>
+        <div class="name">${s.project}${s.isSubagent ? ' <span style="color:var(--text-dim);font-weight:400;">(subagent)</span>' : ''}</div>
         <div class="status-line ${s.status}">● ${s.status}</div>
       </div>
     </div>
     <div class="divider"></div>
+    <div class="section-label">Session</div>
     <div class="rows">
       <div class="row"><span class="k">Model</span><span class="v">${s.model ?? '—'}</span></div>
       <div class="row"><span class="k">Session duration</span><span class="v">${fmtDuration(s.sessionDurationMs)}</span></div>
@@ -182,7 +275,7 @@ function renderPanel() {
       <div class="row"><span class="k">Source</span><span class="v">${s.statusSource ?? 'heuristic'}</span></div>
     </div>
     <div class="divider"></div>
-    <div class="msg-label">Last message</div>
+    <div class="section-label">Last message</div>
     <div class="msg">${(s.lastAssistantText ?? '—').replace(/</g, '&lt;')}</div>
     <div class="note">Est. cost is approximate (token usage × published per-model rates), not a billed figure.</div>
   `;
@@ -193,7 +286,7 @@ function renderSessions(sessions) {
   const counts = { working: 0, waiting: 0, idle: 0 };
   for (const s of sessions) counts[s.status] = (counts[s.status] ?? 0) + 1;
   countsEl.innerHTML = `
-    <span style="color:#8b93a3">${sessions.length} AGENTS</span>
+    <span class="n">${sessions.length} AGENTS</span>
     <span class="working">● ${counts.working} WORKING</span>
     <span class="waiting">● ${counts.waiting} WAITING</span>
     <span class="idle">● ${counts.idle} IDLE</span>
@@ -201,14 +294,13 @@ function renderSessions(sessions) {
 
   const liveIds = new Set(sessions.map((s) => s.id));
   for (const [id, el] of agentEls) {
-    if (!liveIds.has(id)) { el.remove(); agentEls.delete(id); if (selectedId === id) selectedId = null; }
+    if (!liveIds.has(id)) { el.remove(); agentEls.delete(id); agentMotion.delete(id); if (selectedId === id) selectedId = null; }
   }
 
   for (const s of sessions) {
     const el = ensureAgentEl(s.id);
     el.classList.toggle('waiting', s.status === 'waiting');
     el.classList.toggle('selected', s.id === selectedId);
-    el.querySelector('img').src = `assets/characters/char-${charIndexFor(s.id)}.png`;
     el.querySelector('.name').textContent = s.project;
     const statusEl = el.querySelector('.status');
     statusEl.textContent = '● ' + s.status;
@@ -221,11 +313,33 @@ function renderSessions(sessions) {
 function applyPositions(positions) {
   for (const [id, pos] of Object.entries(positions)) {
     const el = agentEls.get(id);
-    if (!el) continue;
+    const motion = agentMotion.get(id);
+    if (!el || !motion) continue;
     el.style.left = pos.x + 'px';
     el.style.top = pos.y + 'px';
+
+    if (motion.x != null) {
+      const dx = pos.x - motion.x, dy = pos.y - motion.y;
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+        motion.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+      }
+    }
+    motion.x = pos.x; motion.y = pos.y;
+    motion.walking = Boolean(pos.walking);
+    if (!motion.walking) motion.frame = 0; // rest pose the instant it stops
   }
 }
+
+// Single shared timer steps the walk-cycle frame for every currently
+// walking agent — cheaper than one interval per character.
+setInterval(() => {
+  for (const [id, motion] of agentMotion) {
+    const el = agentEls.get(id);
+    if (!el) continue;
+    if (motion.walking) motion.frame = (motion.frame + 1) % 6;
+    setSpriteFrame(el.querySelector('.sprite'), motion.dir, motion.frame);
+  }
+}, 110);
 
 function connect() {
   const ws = new WebSocket(`ws://${location.host}`);

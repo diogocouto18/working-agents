@@ -40,6 +40,7 @@ FOOTPRINT = {
     "WC-Paper": (1,1), "Vending-Machine": (1,2), "Water-Dispenser": (1,2),
     "Coffee-Machine": (1,2), "Big-Sofa-2": (3,1), "Small-Table": (1,1),
     "Chair-2": (1,1), "Desk-2": (2,1),
+    "Big-Sofa": (1,1), "Books": (1,1), "Filing-Cabinet-Open": (1,1), "Printer": (1,1),
 }
 
 W, H = 960, 640
@@ -158,6 +159,7 @@ place_px("Boss-Chair", boss_chair_x, boss_chair_y)
 DESK_SEATS.append((boss_chair_x, boss_chair_y))
 place("Big-Filing-Cabinet", 9, 5)
 place("Folders", 11, 6)
+place("Filing-Cabinet-Open", 13, 2); place("Books", 13, 4); place("Books", 4, 8)
 
 # ===================== MEETING ROOM =====================
 place("Board", 15, 0); place("Wall-Graph", 17, 0); place("Wall-Note-2", 19, 0)
@@ -165,6 +167,7 @@ place("Big-Round-Table", 17, 2)
 place("Small-Sofa", 15, 4)
 place("Big-Plant", 21, 3)
 place("Folders-2", 18, 2)
+place("Books", 21, 1); place("Big-Sofa", 21, 5)
 
 # ===================== BATHROOM =====================
 place("Mirror", 25, 0); place("WC-Sink", 25, 2)
@@ -173,6 +176,7 @@ place("Toilet-Closed", 26, 3)
 place("Toilet-Open", 28, 0)
 place("WC-Paper", 28, 2)
 place("Bin", 29, 2)
+place("Small-Plant", 29, 0)
 
 # ===================== BAR / REFEITORIO =====================
 place("Vending-Machine", 20, 8); place("Water-Dispenser", 21, 8); place("Coffee-Machine", 22, 8)
@@ -181,6 +185,7 @@ place("Bin", 20, 11)
 place("Big-Sofa-2", 22, 11)
 place("Small-Table", 26, 11)
 place("Chair-2", 27, 11)
+place("Books", 28, 9); place("Big-Sofa", 20, 9); place("Small-Plant", 29, 11)
 
 # ===================== GAMES ROOM =====================
 tbl_col, tbl_row = 1, 12
@@ -199,6 +204,7 @@ paste(arcade_im, 8*TILE, 12*TILE)
 claw_im = Image.open(f"{BUILD}/claw.png").convert("RGBA").resize((2*TILE, int(2*TILE*56/40)), Image.NEAREST)
 paste(claw_im, 8*TILE, 15*TILE)
 place("Board", 1, 17)
+place("Big-Sofa", 10, 12); place("Small-Plant", 10, 17)
 
 # ===================== DORMITORY =====================
 # No bed asset in the current furniture pack — using Small-Sofa as a bed
@@ -214,6 +220,7 @@ for c, r in [(21,16), (25,16), (21,18)]:
     SLEEP_SEATS.append((seat_x, seat_y))
 place("Small-Table", 24, 18)
 place("Big-Plant", 28, 16)
+place("Books", 25, 18)
 
 # ===================== HALLWAY =====================
 place("Small-Sofa", 13, 6)
@@ -235,23 +242,41 @@ for x, y in SLEEP_SEATS:
     print(f"  {{ room: 'dorm', x: {x}, y: {y} }},")
 
 # ---- character variants ----
+# CharacterModel.png is a 24-col x 6-row sheet: 6 skin tones (rows) x 24
+# animation frames (cols) grouped as 4 directions x 6 walk-cycle frames each
+# — [0:6]=down [6:12]=left [12:18]=up [18:24]=right, frame 0 of each block
+# is the standing/idle pose. Outfits mirror the same 24-col layout. Hair has
+# no per-direction art (single 32x32 sprite) — composited identically on
+# every frame, a minor simplification this pack's resolution hides well.
 base = Image.open(f"{MC}/CharacterModel/Character Model.png").convert("RGBA")
 shadow = Image.open(f"{MC}/CharacterModel/Shadow.png").convert("RGBA")
-def frame(img, col, row, size=32):
+FRAME = 32
+DIRECTIONS = ["down", "left", "up", "right"]  # row order in the exported sheet
+FRAMES_PER_DIR = 6
+CHAR_SCALE = 3  # 32px native -> 96px on screen, matches the rest of the UI
+
+def frame(img, col, row, size=FRAME):
     x, y = col*size, row*size
     return img.crop((x, y, x+size, y+size))
-def make_char(skin_row, outfit_file, hair_file, col=0):
-    body = frame(base, col, skin_row).copy()
-    canvas = Image.new("RGBA", (32,32), (0,0,0,0))
-    canvas.alpha_composite(shadow.crop((0,0,32,32)))
-    canvas.alpha_composite(body)
-    if outfit_file:
-        outfit = Image.open(f"{MC}/Outfits/{outfit_file}").convert("RGBA")
-        canvas.alpha_composite(frame(outfit, col, 0))
-    if hair_file:
-        hair = Image.open(f"{MC}/Hair/{hair_file}").convert("RGBA")
-        canvas.alpha_composite(hair.crop((0,0,32,32)))
-    return canvas
+
+def make_char_sheet(skin_row, outfit_file, hair_file):
+    outfit = Image.open(f"{MC}/Outfits/{outfit_file}").convert("RGBA") if outfit_file else None
+    hair = Image.open(f"{MC}/Hair/{hair_file}").convert("RGBA") if hair_file else None
+    hair_frame = hair.crop((0, 0, FRAME, FRAME)) if hair else None
+    sheet = Image.new("RGBA", (FRAMES_PER_DIR*FRAME, len(DIRECTIONS)*FRAME), (0,0,0,0))
+    for row_i in range(len(DIRECTIONS)):
+        for col_i in range(FRAMES_PER_DIR):
+            src_col = row_i*FRAMES_PER_DIR + col_i
+            cell = Image.new("RGBA", (FRAME,FRAME), (0,0,0,0))
+            cell.alpha_composite(shadow.crop((0,0,FRAME,FRAME)))
+            cell.alpha_composite(frame(base, src_col, skin_row))
+            if outfit:
+                cell.alpha_composite(frame(outfit, src_col, 0))
+            if hair_frame:
+                cell.alpha_composite(hair_frame)
+            sheet.alpha_composite(cell, (col_i*FRAME, row_i*FRAME))
+    return sheet
+
 variants = [
     (0,"Outfit1.png","Hair1.png"), (2,"Outfit3.png","Hair3.png"),
     (4,"Outfit2.png","Hair5.png"), (1,"Outfit4.png","Hair2.png"),
@@ -261,6 +286,7 @@ variants = [
     (3,"Outfit2.png","Hair5.png"), (4,"Outfit4.png","Hair1.png"),
 ]
 for i,(skin,outfit,hair) in enumerate(variants):
-    ch = make_char(skin, outfit, hair).resize((96,96), Image.NEAREST)
-    ch.save(f"{CLIENT}/characters/char-{i}.png")
-print("character variants regenerated")
+    sheet = make_char_sheet(skin, outfit, hair)
+    sheet = sheet.resize((sheet.width*CHAR_SCALE, sheet.height*CHAR_SCALE), Image.NEAREST)
+    sheet.save(f"{CLIENT}/characters/char-{i}.png")
+print(f"character sprite sheets regenerated ({FRAMES_PER_DIR*CHAR_SCALE*FRAME}x{len(DIRECTIONS)*CHAR_SCALE*FRAME} each, {len(DIRECTIONS)} dirs x {FRAMES_PER_DIR} frames)")
