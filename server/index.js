@@ -42,7 +42,11 @@ const httpServer = createServer(async (req, res) => {
     const filePath = join(__dirname, '..', 'client', path);
     const body = await readFile(filePath);
     const ext = path.slice(path.lastIndexOf('.'));
-    res.writeHead(200, { 'Content-Type': MIME[ext] ?? 'application/octet-stream' });
+    // This is a dev tool whose own assets (office-bg.png, character
+    // sprites) get regenerated during development — a cached stale copy
+    // showing after a normal refresh is confusing, so never let the
+    // browser cache these without revalidating.
+    res.writeHead(200, { 'Content-Type': MIME[ext] ?? 'application/octet-stream', 'Cache-Control': 'no-cache' });
     res.end(body);
   } catch {
     res.writeHead(404);
