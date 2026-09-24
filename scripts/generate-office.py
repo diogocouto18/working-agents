@@ -46,9 +46,12 @@ FOOTPRINT = {
 W, H = 960, 640
 scene = Image.new("RGBA", (W, H), (10,10,14,255))
 draw = ImageDraw.Draw(scene)
+# warmer, higher-contrast slate tile instead of the near-black checker —
+# the old (30,34,44)/(24,27,35) pair read as an empty void once the stray
+# sofa/rug were cleared out of the hallway.
 for x in range(0, W, 16):
     for y in range(0, H, 16):
-        c = (30,34,44,255) if ((x//16 + y//16) % 2 == 0) else (24,27,35,255)
+        c = (46,50,64,255) if ((x//16 + y//16) % 2 == 0) else (36,40,52,255)
         draw.rectangle([x,y,x+15,y+15], fill=c)
 
 WALL = (15,16,22,255); WALLW = 4
@@ -98,10 +101,11 @@ rug(50,40,260,240,(122,86,52,255))
 rug(480,60,690,190,(56,74,110,255))
 rug(660,290,940,420,(210,198,168,255))
 rug(20,390,240,600,(96,58,108,255))
-# the (440,180)-(540,260) hallway rug that used to sit under the lounge
-# sofa is gone along with the sofa itself — nothing sits on it anymore,
-# so it just read as an unexplained dark square in the middle of the floor.
 rug(660,500,930,624,(78,64,102,255))
+# new hallway lounge nook (sofa + side table sit directly on it, unlike
+# the earlier orphaned rug) — a genuinely open patch of floor between
+# WORK/MEET/BATH above and BAR/GAMES/DORM below, clear of every room.
+rug(464,368,624,432,(72,66,86,255))
 
 # WORK's right-hand door gap is left with plain hallway floor (no
 # corridor_stub fill) — the darker solid patch here used to combine with
@@ -244,6 +248,13 @@ place("Wall-Graph", 14, 15, extra_scale=1.2)
 for pr in (0, 9, 17):
     place("Small-Plant", 14, pr)
 place("Board", 24, 15)
+
+# lounge nook on the new rug above — a real seating pair this time, not a
+# floor mat with nothing on it.
+place("Small-Sofa", 15, 12)
+place("Small-Table", 18, 12)
+place("Small-Plant", 23, 1)   # by the bathroom's corridor stub
+place("Small-Plant", 18, 17)  # by the dorm's corridor stub
 
 scene.save(f"{CLIENT}/office-bg.png")
 print("office-bg.png saved", scene.size)
