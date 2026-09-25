@@ -4,7 +4,7 @@
 
 <p align="center">
   <img alt="Node.js >= 18" src="https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white">
-  <img alt="Status: personal project" src="https://img.shields.io/badge/status-personal%20project-blue">
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
   <img alt="Runs locally" src="https://img.shields.io/badge/runs-locally%2C%20no%20cloud-lightgrey">
   <img alt="Built for Claude Code" src="https://img.shields.io/badge/built%20for-Claude%20Code-d97757">
 </p>
@@ -182,13 +182,22 @@ assets-src/           vendored sprite packs (see Credits below)
 
 | Pack | Author | License |
 |---|---|---|
-| MetroCity characters | JIK-A-4 | CC0 |
-| Office Furniture Pixel Art | Antea | CC BY 4.0 — attribution required |
-| Billiard Kit Pixel Art | Luca Pixel (OpenGameArt) | CC0 |
-| Cute Cafe/Arcade Assets | Lumi | Informal permission |
+| [MetroCity](https://jik-a-4.itch.io/metrocity-free-topdown-character-pack) | JIK-A-4 | CC0 1.0 |
+| [Office Furniture Pixel Art](https://stcrbcn.itch.io/furniture-office-set) | Antea | CC BY 4.0 — attribution required |
+| [Billiard Kit Pixel Art](https://lucapixel.itch.io/) | Luca Pixel | CC0 1.0 |
+| [Cute Cafe/Arcade Assets](https://lumi-li.itch.io/cute-cafearcade-assets) | Lumi | Public permission statement, no formal license — see [CREDITS.md](CREDITS.md) |
 
-Full attribution text in [CREDITS.md](CREDITS.md).
+Full attribution text, source links, and license details in
+[CREDITS.md](CREDITS.md).
+
+## License
+
+The code in this repository is [MIT licensed](LICENSE). The vendored
+sprite packs under `assets-src/` and the images generated from them under
+`client/assets/` are third-party work under their own licenses — see
+[Credits](#credits) above.
 
 ## Status
 
-Personal project, running locally. Not published as a public repository.
+Personal project. Built for my own Claude Code workflow, published in
+case it's useful to anyone else.
