@@ -1,0 +1,4 @@
+{
+  "default": { "input": 3.0, "output": 15.0 },
+  "claude-example-model": { "input": 4.0, "output": 20.0 }
+}

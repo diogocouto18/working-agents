@@ -13,7 +13,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
-import { estimateCostUsd } from './pricing.js';
+import { estimateCost } from './pricing.js';
 
 const RECENT_MS = 12_000;
 const STALE_MS = 5 * 60_000;
@@ -103,6 +103,7 @@ export async function parseSession(filePath) {
     status = 'idle';
   }
 
+  const cost = model ? estimateCost(model, usage) : null;
   const totalTokens = usage.inputTokens + usage.outputTokens + usage.cacheReadTokens + usage.cacheCreationTokens;
 
   return {
@@ -119,7 +120,8 @@ export async function parseSession(filePath) {
     ageMs,
     model,
     totalTokens,
-    estimatedCostUsd: model ? estimateCostUsd(model, usage) : null,
+    estimatedCostUsd: cost ? cost.usd : null,
+    costIsEstimated: cost ? cost.estimated : false,
     toolCallCount,
     sessionDurationMs: firstTimestamp ? new Date(lastTimestamp) - new Date(firstTimestamp) : 0,
   };

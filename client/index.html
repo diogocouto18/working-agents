@@ -269,7 +269,7 @@ function renderPanel() {
       <div class="row"><span class="k">Model</span><span class="v">${s.model ?? '—'}</span></div>
       <div class="row"><span class="k">Session duration</span><span class="v">${fmtDuration(s.sessionDurationMs)}</span></div>
       <div class="row"><span class="k">Tokens used</span><span class="v">${fmtTokens(s.totalTokens)}</span></div>
-      <div class="row"><span class="k">Est. cost</span><span class="v">${fmtCost(s.estimatedCostUsd)}</span></div>
+      <div class="row"><span class="k">Est. cost</span><span class="v"${s.costIsEstimated ? ' title="Unknown model: priced with the default rate. Add it to pricing.json."' : ''}>${s.costIsEstimated ? '~' : ''}${fmtCost(s.estimatedCostUsd)}${s.costIsEstimated ? ' (default rate)' : ''}</span></div>
       <div class="row"><span class="k">Tool calls</span><span class="v">${s.toolCallCount}</span></div>
       <div class="row"><span class="k">Last activity</span><span class="v">${fmtAge(s.ageMs)}</span></div>
       <div class="row"><span class="k">Source</span><span class="v">${s.statusSource ?? 'heuristic'}</span></div>
@@ -277,7 +277,7 @@ function renderPanel() {
     <div class="divider"></div>
     <div class="section-label">Last message</div>
     <div class="msg">${(s.lastAssistantText ?? '—').replace(/</g, '&lt;')}</div>
-    <div class="note">Est. cost is approximate (token usage × published per-model rates), not a billed figure.</div>
+    <div class="note">Est. cost is approximate (token usage × published per-model rates), not a billed figure.${s.costIsEstimated ? ' This model has no known rate, so the default rate was used.' : ''}</div>
   `;
 }
 

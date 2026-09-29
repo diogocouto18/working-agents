@@ -158,6 +158,28 @@ first) without touching anything else already there. It's idempotent —
 safe to re-run. Restart any active Claude Code sessions (or open `/hooks`
 once) for the config to take effect.
 
+### Optional: custom model pricing
+
+Costs are estimated from built-in per-model rates. For a model the server
+does not know yet, it logs a one-time warning, prices the session at a
+default rate and marks the cost in the detail panel as estimated
+(`~$1.23 (default rate)`). To add or override rates, copy the example and
+edit it:
+
+```bash
+cp pricing.example.json pricing.json   # USD per 1M tokens, git-ignored
+```
+
+```json
+{
+  "default": { "input": 3.0, "output": 15.0 },
+  "claude-example-model": { "input": 4.0, "output": 20.0 }
+}
+```
+
+Set `WORKING_AGENTS_PRICING` to read the file from another path. Restart the
+server after editing.
+
 ### Optional: regenerate the office background
 
 The background and character sprites are pre-rendered PNGs, already
