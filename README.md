@@ -133,6 +133,16 @@ npm run dev
 
 Then open **http://localhost:4242**.
 
+### Security model
+
+The server is a local dev tool and listens on `127.0.0.1` only by default
+(override with `HOST`). It rejects any request whose `Host` header is not a
+loopback address or whose `Origin` header is not the dashboard itself, which
+blocks other web pages open in your browser (including DNS-rebinding
+attempts) from reading session data over the WebSocket or forging `/hook`
+events. It has no authentication, so do not expose it beyond your machine
+(e.g. `HOST=0.0.0.0`) on an untrusted network.
+
 ### Optional: precise status via hooks
 
 Without hooks, status is inferred from JSONL timestamps alone (still

@@ -8,10 +8,13 @@ import { scanActiveSessions, PROJECTS_DIR } from './scanSessions.js';
 import { recordHookEvent } from './hookState.js';
 import { updateWorld } from './world.js';
 import { resolveClientPath } from './staticPath.js';
+import { allowedHosts, isRequestAllowed } from './originGuard.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLIENT_ROOT = join(__dirname, '..', 'client');
 const PORT = process.env.PORT || 4242;
+const HOST = process.env.HOST || '127.0.0.1';
+const ALLOWED = allowedHosts(HOST, PORT);
 const POLL_MS = 5_000; // catches working -> idle transitions between file writes
 
 const MIME = {
@@ -22,6 +25,12 @@ const MIME = {
 };
 
 const httpServer = createServer(async (req, res) => {
+  if (!isRequestAllowed({ host: req.headers.host, origin: req.headers.origin }, ALLOWED)) {
+    res.writeHead(403);
+    res.end('forbidden');
+    return;
+  }
+
   if (req.method === 'POST' && req.url === '/hook') {
     let body = '';
     req.on('data', (chunk) => { body += chunk; if (body.length > 100_000) req.destroy(); });
@@ -60,7 +69,11 @@ const httpServer = createServer(async (req, res) => {
   }
 });
 
-const wss = new WebSocketServer({ server: httpServer });
+const wss = new WebSocketServer({
+  server: httpServer,
+  verifyClient: ({ req }) =>
+    isRequestAllowed({ host: req.headers.host, origin: req.headers.origin }, ALLOWED),
+});
 
 let latestSessions = [];
 const MOVEMENT_TICK_MS = 180;
@@ -103,7 +116,7 @@ watcher.on('all', () => {
 
 setInterval(broadcast, POLL_MS);
 
-httpServer.listen(PORT, () => {
-  console.log(`working-agents server on http://localhost:${PORT}`);
+httpServer.listen(PORT, HOST, () => {
+  console.log(`working-agents server on http://${HOST}:${PORT}`);
   console.log(`watching ${PROJECTS_DIR}`);
 });
