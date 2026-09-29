@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Visualize live Claude Code agent activity as a top-down pixel office.",
   "scripts": {
-    "dev": "node server/index.js"
+    "dev": "node server/index.js",
+    "test": "node --test test/"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
