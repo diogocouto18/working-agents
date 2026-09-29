@@ -3,6 +3,7 @@
 <p align="center"><b>Your Claude Code sessions, alive in a pixel-art office.</b></p>
 
 <p align="center">
+  <a href="https://github.com/diogocouto18/working-agents/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/diogocouto18/working-agents/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Node.js >= 18" src="https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
   <img alt="Runs locally" src="https://img.shields.io/badge/runs-locally%2C%20no%20cloud-lightgrey">
