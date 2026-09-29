@@ -14,6 +14,8 @@
   <a href="#how-it-works">How it Works</a> •
   <a href="#the-daily-schedule">Daily Schedule</a> •
   <a href="#quick-start">Quick Start</a> •
+  <a href="#configuration">Configuration</a> •
+  <a href="#troubleshooting">Troubleshooting</a> •
   <a href="#credits">Credits</a>
 </p>
 
@@ -24,6 +26,10 @@ machine into a character walking around a 6-room pixel office — working at
 a desk, waiting on a permission prompt, or idle at the bar, the games room,
 or asleep in the dorm — updated in real time from the actual session data
 on disk, not a simulation.
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Demo: agents walk between the work room and the social rooms as their sessions start working and go idle" width="820">
+</p>
 
 <p align="center">
   <img src="docs/screenshot-office.png" alt="The office, live — six rooms, three agents, real-time status">
@@ -124,6 +130,14 @@ happens:
 
 Tune it in `SCHEDULE` at the top of `server/world.js`.
 
+## Requirements
+
+- **Node.js 18 or newer** and npm — runs the server.
+- **Python 3** — only needed for the optional helper scripts:
+  `scripts/install-hooks.py` (standard library only) and
+  `scripts/generate-office.py` (also needs Pillow).
+- **Claude Code**, with session transcripts under `~/.claude/projects`.
+
 ## Quick Start
 
 ```bash
@@ -131,7 +145,46 @@ npm install
 npm run dev
 ```
 
-Then open **http://localhost:4242**.
+Then open **http://localhost:4242**. The server prints the directory it is
+watching on startup; start (or keep using) a Claude Code session and its
+character appears within a few seconds.
+
+## Configuration
+
+All settings are optional environment variables:
+
+| Variable | Default | Read by | Purpose |
+|---|---|---|---|
+| `PORT` | `4242` | server | Port the dashboard and WebSocket listen on. |
+| `HOST` | `127.0.0.1` | server | Interface to bind. Keep it on loopback — there is no authentication (see [Security model](#security-model)). |
+| `WORKING_AGENTS_PROJECTS_DIR` | `~/.claude/projects` | server | Directory scanned for session `.jsonl` files. Point it elsewhere for a custom Claude Code config directory or a demo. |
+| `WORKING_AGENTS_URL` | `http://127.0.0.1:4242` | hook script | Where `server/claude-hook.js` sends hook events. Set it (in the environment Claude Code runs in) if you changed `PORT` or `HOST`. |
+
+```bash
+PORT=5000 npm run dev
+WORKING_AGENTS_URL=http://127.0.0.1:5000 claude   # so the hooks find the server
+```
+
+## Platform Support
+
+The server is plain Node.js with no platform-specific code, but it has been
+developed and used on **Linux (WSL2 Ubuntu)** only. macOS should work as is;
+native Windows is untested.
+
+**Windows / WSL.** The server, the hook script and Claude Code must all see
+the same `.claude` directory:
+
+- Claude Code inside WSL: run the server inside WSL too and open
+  `http://localhost:4242` from your Windows browser (WSL2 forwards
+  localhost by default).
+- Claude Code on native Windows, server inside WSL: point
+  `WORKING_AGENTS_PROJECTS_DIR` at the Windows profile, for example
+  `/mnt/c/Users/<you>/.claude/projects`. File-change events do not
+  propagate reliably over `/mnt/c`, so updates then arrive on the server's
+  5-second poll instead of instantly.
+- Run `scripts/install-hooks.py` with the Python of the same environment
+  as Claude Code, since it edits `~/.claude/settings.json` of whoever runs
+  it.
 
 ### Security model
 
@@ -144,6 +197,8 @@ events. It has no authentication, so do not expose it beyond your machine
 (e.g. `HOST=0.0.0.0`) on an untrusted network.
 
 ### Optional: precise status via hooks
+
+Requires Python 3 and an existing `~/.claude/settings.json`.
 
 Without hooks, status is inferred from JSONL timestamps alone (still
 accurate, just a bit less immediate). To wire up the real thing:
@@ -187,6 +242,36 @@ scripts/
   install-hooks.py    one-time, user-run installer for the Claude Code hooks
 assets-src/           vendored sprite packs (see Credits below)
 ```
+
+## Troubleshooting
+
+**No agents appear.** Work through these in order:
+
+1. **Check the watched directory.** The server logs `watching <path>` on
+   startup. That directory must contain `<project>/<session>.jsonl` files
+   (`ls ~/.claude/projects/*/`). If your transcripts live elsewhere, set
+   `WORKING_AGENTS_PROJECTS_DIR`.
+2. **Sessions must be recent and non-empty.** Only transcripts modified in
+   the last 30 minutes and containing at least one conversation turn are
+   shown. Send a message in a Claude Code session and wait a few seconds.
+3. **Same machine and user.** A server running in WSL does not see the
+   `~/.claude` of your Windows user, and vice versa — see
+   [Platform Support](#platform-support).
+4. **Blank page or a 403 in the browser console.** Open the dashboard via
+   `http://localhost:<PORT>` or `http://127.0.0.1:<PORT>`. Requests with any
+   other `Host` or `Origin` are rejected on purpose.
+5. **Port already in use.** Set another `PORT`, and `WORKING_AGENTS_URL` for
+   the hooks.
+
+**Agents show but the status feels laggy or the panel says `heuristic`.**
+Hooks are not installed or not reaching the server. Run
+`python3 scripts/install-hooks.py`, restart your Claude Code sessions, and
+make sure `WORKING_AGENTS_URL` matches the server's address. The hooks fail
+silently by design, so a stopped server never affects Claude Code.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Credits
 
