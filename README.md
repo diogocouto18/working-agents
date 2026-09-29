@@ -159,6 +159,7 @@ All settings are optional environment variables:
 | `PORT` | `4242` | server | Port the dashboard and WebSocket listen on. |
 | `HOST` | `127.0.0.1` | server | Interface to bind. Keep it on loopback — there is no authentication (see [Security model](#security-model)). |
 | `WORKING_AGENTS_PROJECTS_DIR` | `~/.claude/projects` | server | Directory scanned for session `.jsonl` files. Point it elsewhere for a custom Claude Code config directory or a demo. |
+| `WORKING_AGENTS_PRICING` | `pricing.json` next to `package.json` | server | Optional pricing override file (USD per 1M tokens); see [Custom model pricing](#optional-custom-model-pricing). |
 | `WORKING_AGENTS_URL` | `http://127.0.0.1:4242` | hook script | Where `server/claude-hook.js` sends hook events. Set it (in the environment Claude Code runs in) if you changed `PORT` or `HOST`. |
 
 ```bash
