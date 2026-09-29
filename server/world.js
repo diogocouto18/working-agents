@@ -52,7 +52,7 @@ const SOCIAL_SEATS = [
 // their downtime, not a claim about when real Claude Code activity happens.
 // Windows not listed here (the 08:00-18:00 workday, outside the breaks
 // below) fall back to a random seat in any room — free roam.
-const SCHEDULE = [
+export const SCHEDULE = [
   { start: 0 * 60, end: 8 * 60, room: 'dorm' }, // 00:00-08:00 sleeping
   { start: 11 * 60, end: 11 * 60 + 30, room: 'bar' }, // 11:00-11:30 pause
   { start: 13 * 60, end: 14 * 60, room: 'bar' }, // 13:00-14:00 lunch
@@ -62,7 +62,7 @@ const SCHEDULE = [
   { start: 21 * 60, end: 24 * 60, room: 'games' }, // 21:00-00:00 games room
 ];
 
-function scheduledRoom(date = new Date()) {
+export function scheduledRoom(date = new Date()) {
   const minutes = date.getHours() * 60 + date.getMinutes();
   for (const { start, end, room } of SCHEDULE) {
     if (minutes >= start && minutes < end) return room;
