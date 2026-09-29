@@ -11,7 +11,7 @@
 //   - Must time out fast if the local server isn't running.
 
 const EVENT = process.argv[2] ?? 'unknown';
-const SERVER_URL = process.env.WORKING_AGENTS_URL ?? 'http://localhost:4242';
+const SERVER_URL = process.env.WORKING_AGENTS_URL ?? 'http://127.0.0.1:4242';
 
 async function main() {
   let raw = '';
