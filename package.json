@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19.0"
   },
   "type": "module",
   "description": "Visualize live Claude Code agent activity as a top-down pixel office.",
@@ -12,7 +12,7 @@
     "test": "node --test"
   },
   "dependencies": {
-    "chokidar": "^3.6.0",
+    "chokidar": "^5.0.0",
     "ws": "^8.18.0"
   }
 }

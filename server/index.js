@@ -105,7 +105,10 @@ wss.on('connection', async (ws) => {
 });
 
 let debounceTimer = null;
-const watcher = chokidar.watch(`${PROJECTS_DIR}/**/*.jsonl`, {
+const watcher = chokidar.watch(PROJECTS_DIR, {
+  // chokidar 4+ dropped glob support: watch the directory and ignore any
+  // file that is not a .jsonl transcript (directories must stay watchable).
+  ignored: (path, stats) => Boolean(stats?.isFile()) && !path.endsWith('.jsonl'),
   ignoreInitial: true,
   awaitWriteFinish: { stabilityThreshold: 300, pollInterval: 100 },
 });

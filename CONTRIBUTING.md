@@ -5,7 +5,7 @@ is light.
 
 ## Setup
 
-Requirements: Node.js 20+ and npm. Python 3 is only needed for the helper
+Requirements: Node.js 20.19+ and npm. Python 3 is only needed for the helper
 scripts.
 
 ```bash
