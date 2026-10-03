@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/diogocouto18/working-agents/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/diogocouto18/working-agents/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="Node.js >= 18" src="https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white">
+  <img alt="Node.js >= 20" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
   <img alt="Runs locally" src="https://img.shields.io/badge/runs-locally%2C%20no%20cloud-lightgrey">
   <img alt="Built for Claude Code" src="https://img.shields.io/badge/built%20for-Claude%20Code-d97757">
@@ -133,7 +133,7 @@ Tune it in `SCHEDULE` at the top of `server/world.js`.
 
 ## Requirements
 
-- **Node.js 18 or newer** and npm — runs the server.
+- **Node.js 20 or newer** and npm — runs the server.
 - **Python 3** — only needed for the optional helper scripts:
   `scripts/install-hooks.py` (standard library only) and
   `scripts/generate-office.py` (also needs Pillow).

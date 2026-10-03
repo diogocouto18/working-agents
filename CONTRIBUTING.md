@@ -5,7 +5,7 @@ is light.
 
 ## Setup
 
-Requirements: Node.js 18+ and npm. Python 3 is only needed for the helper
+Requirements: Node.js 20+ and npm. Python 3 is only needed for the helper
 scripts.
 
 ```bash
@@ -32,7 +32,7 @@ shows the fields it reads.
 2. Branch from `master`; one topic per pull request.
 3. Add or update tests for server-side logic (`server/`). Tests live in
    `test/` and use the built-in `node:test` runner.
-4. Run `npm test` before pushing. CI runs the same command on Node 18 and 20.
+4. Run `npm test` before pushing. CI runs the same command on Node 20 and 22.
 5. For UI changes, run the server and check the result in a browser;
    screenshots in the PR help.
 

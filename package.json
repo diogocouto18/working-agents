@@ -2,11 +2,14 @@
   "name": "working-agents",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "description": "Visualize live Claude Code agent activity as a top-down pixel office.",
   "scripts": {
     "dev": "node server/index.js",
-    "test": "node --test test/"
+    "test": "node --test"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
